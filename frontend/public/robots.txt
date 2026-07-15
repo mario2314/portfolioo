@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+# Ganti URL di bawah ini dengan URL backend kamu setelah deploy ke Railway,
+# contoh: Sitemap: https://nama-project.up.railway.app/sitemap.xml
+Sitemap: https://ganti-dengan-url-backend-kamu/sitemap.xml

@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================================
+// Auth
+// ==========================================================
+
+model Admin {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// ==========================================================
+// Singleton content (selalu 1 baris, di-update lewat upsert)
+// ==========================================================
+
+model Hero {
+  id            String   @id @default(uuid())
+  photoUrl      String?
+  name          String?
+  profession    String?
+  headline      String?
+  subheadline   String?
+  backgroundUrl String?
+  cvUrl         String?
+  updatedAt     DateTime @updatedAt
+}
+
+model About {
+  id          String   @id @default(uuid())
+  photoUrl    String?
+  title       String?
+  description String?
+  careerGoal  String?
+  vision      String?
+  mission     String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSettings {
+  id               String   @id @default(uuid())
+  email            String?
+  whatsapp         String?
+  linkedin         String?
+  github           String?
+  instagram        String?
+  location         String?
+  mapEmbedUrl      String?
+  githubUsername   String?
+  footerCopyright  String?
+  footerQuickLinks String?  // JSON.stringify([{ label, url }, ...])
+  logoUrl          String?
+  seoTitle         String?
+  seoDescription   String?
+  seoKeywords      String?
+  ogImage          String?
+  twitterCard      String?
+  canonicalUrl     String?
+  updatedAt        DateTime @updatedAt
+}
+
+// ==========================================================
+// Skills & Tech Stack
+// ==========================================================
+
+// Kategori skill divalidasi di layer Zod (lihat skill.validator.js), bukan di DB —
+// SQLite tidak mendukung native enum. Nilai yang valid: PROGRAMMING_LANGUAGE,
+// FRAMEWORK, DATABASE, CLOUD, TOOLS, AI, ROBOTICS
+
+model Skill {
+  id          String        @id @default(uuid())
+  name        String
+  iconUrl     String?
+  category    String
+  level       Int           @default(0)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  projects    Project[]     @relation("ProjectTechStack")
+  experiences Experience[]  @relation("ExperienceSkills")
+}
+
+// ==========================================================
+// Projects
+// ==========================================================
+
+// Status project juga divalidasi di layer Zod, bukan native enum DB.
+// Nilai yang valid: DRAFT, PUBLISHED, ARCHIVED
+
+model Project {
+  id               String         @id @default(uuid())
+  thumbnailUrl     String?
+  name             String
+  slug             String         @unique
+  shortDescription String?
+  fullDescription  String?
+  challenge        String?
+  solution         String?
+  process          String?
+  result           String?
+  githubUrl        String?
+  demoUrl          String?
+  videoUrl         String?
+  featured         Boolean        @default(false)
+  category         String?
+  projectDate      DateTime?
+  status           String         @default("DRAFT")
+  order            Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  gallery          ProjectImage[]
+  techStack        Skill[]        @relation("ProjectTechStack")
+}
+
+model ProjectImage {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// ==========================================================
+// Experience & Education
+// ==========================================================
+
+model Experience {
+  id          String    @id @default(uuid())
+  company     String
+  logoUrl     String?
+  position    String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  skills      Skill[]   @relation("ExperienceSkills")
+}
+
+model Education {
+  id          String    @id @default(uuid())
+  school      String
+  major       String?
+  logoUrl     String?
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  gpa         String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ==========================================================
+// Certifications & Achievements
+// ==========================================================
+
+model Certification {
+  id            String    @id @default(uuid())
+  name          String
+  issuer        String?
+  date          DateTime?
+  imageUrl      String?
+  credentialUrl String?
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Achievement {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  date        DateTime?
+  category    String?
+  imageUrl    String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ==========================================================
+// Blog
+// ==========================================================
+
+model BlogPost {
+  id             String    @id @default(uuid())
+  thumbnailUrl   String?
+  title          String
+  slug           String    @unique
+  content        String
+  category       String?
+  tags           String    @default("[]") // JSON.stringify(["tag1", "tag2"])
+  seoTitle       String?
+  seoDescription String?
+  publishedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ==========================================================
+// Testimonials
+// ==========================================================
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  photoUrl  String?
+  name      String
+  position  String?
+  company   String?
+  content   String
+  rating    Int      @default(5)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==========================================================
+// Contact messages (masuk dari form publik)
+// ==========================================================
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
