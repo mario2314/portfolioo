@@ -1,4 +1,4 @@
-﻿FROM node:18-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -10,6 +10,7 @@ RUN npx prisma generate
 
 COPY . .
 
+ENV PORT=8000
 EXPOSE 8000
 
 CMD ["node", "server.js"]
