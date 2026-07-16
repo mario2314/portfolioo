@@ -1,9 +1,15 @@
 ﻿FROM node:18-alpine
-RUN apk add --no-cache openssl
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
-COPY . .
+COPY prisma ./prisma
+
+RUN npm ci --omit=dev
 RUN npx prisma generate
-EXPOSE 8080
-CMD ["npm", "start"]
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["node", "server.js"]
